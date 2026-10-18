@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forkcast – find where to eat</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍴</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body class="view-split">
+  <header class="topbar">
+    <a class="logo" href="#" data-action="home"><span class="logo-mark">🍴</span>Forkcast</a>
+    <nav class="topnav">
+      <button class="btn-ghost" data-action="wizard"><i data-icon="sparkles"></i><span class="hide-sm">Help me choose</span></button>
+      <button class="btn-ghost" data-action="shortlist" id="sl-btn"><i data-icon="heart"></i><span class="hide-sm">Shortlist</span> <span id="sl-count" class="count"></span></button>
+      <button class="icon-btn" data-action="settings" aria-label="Settings"><i data-icon="gear"></i></button>
+    </nav>
+  </header>
+
+  <section class="searchbar">
+    <form id="search-form" class="search" autocomplete="off">
+      <label class="field field-loc">
+        <span>Postcode or suburb</span>
+        <input id="q" placeholder="e.g. 2010 or Surry Hills" inputmode="search">
+        <button type="button" class="locate" data-action="locate" title="Use my location" aria-label="Use my location"><i data-icon="locate"></i></button>
+      </label>
+      <label class="field field-radius">
+        <span>Radius</span>
+        <select id="radius">
+          <option value="500">500 m</option>
+          <option value="1000">1 km</option>
+          <option value="1500">1.5 km</option>
+          <option value="2000">2 km</option>
+          <option value="3000">3 km</option>
+          <option value="5000">5 km</option>
+          <option value="10000">10 km</option>
+        </select>
+      </label>
+      <label class="field field-kw">
+        <span>Craving <em>(optional)</em></span>
+        <input id="kw" placeholder="Cuisine, dish or name — e.g. ramen">
+      </label>
+      <button class="btn-primary search-btn" type="submit"><i data-icon="search"></i> Search</button>
+    </form>
+  </section>
+
+  <div class="toolbar">
+    <div class="chips" id="quick-chips"></div>
+    <div class="toolbar-right">
+      <button class="btn-outline" data-action="filters"><i data-icon="sliders"></i><span class="hide-sm">Filters</span> <span id="filter-count" class="count"></span></button>
+      <label class="sort"><span class="hide-sm">Sort</span>
+        <select id="sort">
+          <option value="recommended">Recommended</option>
+          <option value="rating">Highest rated</option>
+          <option value="distance">Nearest</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="reviews">Most reviewed</option>
+          <option value="healthy">Healthiest</option>
+        </select>
+      </label>
+      <div class="seg" id="view-seg" role="group" aria-label="View">
+        <button data-action="view" data-v="list" title="List"><i data-icon="list"></i></button>
+        <button data-action="view" data-v="split" title="List and map"><i data-icon="split"></i></button>
+        <button data-action="view" data-v="map" title="Map"><i data-icon="map"></i></button>
+      </div>
+    </div>
+  </div>
+  <div id="banner" class="banner" hidden></div>
+
+  <main class="layout">
+    <section class="results" id="results-pane">
+      <div class="results-head" id="results-head"></div>
+      <div class="active-filters" id="active-filters"></div>
+      <div class="cards" id="cards"></div>
+      <div class="more" id="more"></div>
+    </section>
+    <aside class="map-pane" id="map-pane">
+      <div id="map"></div>
+      <div id="map-preview" class="map-preview" hidden></div>
+    </aside>
+  </main>
+
+  <button class="fab" data-action="toggle-mobile-view" id="fab"><i data-icon="map"></i> <span>Map</span></button>
+
+  <div id="detail" class="detail" hidden></div>
+  <div id="drawer" class="drawer" hidden></div>
+  <div id="modal" class="modal" hidden></div>
+  <div id="lightbox" class="lightbox" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
