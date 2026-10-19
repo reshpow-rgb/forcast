@@ -60,8 +60,11 @@ import com.riseup.alarm.alarm.AlarmScheduler
 import com.riseup.alarm.billing.BillingManager
 import com.riseup.alarm.data.Alarm
 import com.riseup.alarm.data.AlarmRepository
+import com.riseup.alarm.data.StreakRepository
+import com.riseup.alarm.data.StreakStats
 import com.riseup.alarm.ui.theme.ClockStyle
 import com.riseup.alarm.ui.theme.Muted
+import com.riseup.alarm.ui.theme.Sun
 import kotlinx.coroutines.delay
 
 @Composable
@@ -71,9 +74,13 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
     val alarms by repo.alarms.collectAsStateWithLifecycle()
     val isPremium by billing.isPremium.collectAsStateWithLifecycle()
     val price by billing.price.collectAsStateWithLifecycle()
+    val streaks = remember { StreakRepository.get(context) }
+    val streak by streaks.stats.collectAsStateWithLifecycle()
+    LaunchedEffect(refreshTick) { streaks.refresh() }
 
     var editing by remember { mutableStateOf<Alarm?>(null) }
     var showPremium by remember { mutableStateOf(false) }
+    var showStreaks by remember { mutableStateOf(false) }
 
     val save: (Alarm) -> Unit = { alarm ->
         repo.upsert(alarm)
@@ -82,7 +89,10 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
     }
 
     val current = editing
-    if (current != null) {
+    if (showStreaks) {
+        BackHandler { showStreaks = false }
+        StreaksScreen(onClose = { showStreaks = false })
+    } else if (current != null) {
         val alarm = current
         BackHandler { editing = null }
         EditAlarmScreen(
@@ -130,6 +140,7 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
             modifier = Modifier.fillMaxSize(),
         ) {
             item { Header(alarms, isPremium, onPremium = { showPremium = true }) }
+            item { StreakRow(streak, onClick = { showStreaks = true }) }
             item { PermissionWarnings(refreshTick) }
             if (alarms.isEmpty()) {
                 item {
@@ -202,6 +213,30 @@ private fun Header(alarms: List<Alarm>, isPremium: Boolean, onPremium: () -> Uni
         Text(formatDuration(next - now), style = MaterialTheme.typography.displayMedium)
     }
     Spacer(Modifier.height(24.dp))
+}
+
+@Composable
+private fun StreakRow(stats: StreakStats, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+            Text(
+                "${stats.current}",
+                style = MaterialTheme.typography.headlineMedium,
+                color = if (stats.current > 0) Sun else Muted,
+                modifier = Modifier.width(48.dp),
+            )
+            Column(Modifier.weight(1f)) {
+                Text("day streak")
+                Text(milestoneLine(stats), color = Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            Text("Best ${stats.best}", color = Muted, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable

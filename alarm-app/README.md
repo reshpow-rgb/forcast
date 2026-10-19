@@ -19,6 +19,16 @@ Each alarm has a time, repeat days, mission, difficulty, number of rounds (1–5
 - Alarms are re-armed after a reboot or time-zone change.
 - "Try this mission" in the alarm editor lets you practise a mission.
 
+## Streaks
+
+Every day you complete your wake-up mission adds a day to your streak. Days with no alarm (weekends
+off, holidays) are skipped instead of breaking it; a day where the alarm rang but the mission wasn't
+finished resets it.
+
+- The home screen shows your current streak, your best, and how far to the next milestone
+  (3, 7, 14, 30, 50, 100, 200, 365 days). Tap it for a 5-week calendar.
+- The "Good morning" screen celebrates the new streak number and milestones.
+
 ## Making money from it
 
 Freemium, with two income streams:
@@ -83,11 +93,11 @@ Requirements: Android Studio (Ladybug or newer) or JDK 17 + Android SDK 35.
 ```
 app/src/main/java/com/riseup/alarm/
   mission/      Challenge generators (maths, quotes, words) and the word/quote lists
-  data/         Alarm model + next-ring-time logic, JSON storage
+  data/         Alarm model + next-ring-time logic, JSON storage, streak rules
   alarm/        AlarmManager scheduling, ringing foreground service, boot receiver
   billing/      Google Play Billing (Premium unlock)
   ads/          AdMob banners + consent
   ui/           Alarm list, editor, ringing/mission screen (Jetpack Compose)
 ```
 
-Unit tests (`./gradlew testDebugUnitTest`) cover the mission generators and the next-alarm-time logic.
+Unit tests (`./gradlew testDebugUnitTest`) cover the mission generators, the next-alarm-time logic and the streak rules.

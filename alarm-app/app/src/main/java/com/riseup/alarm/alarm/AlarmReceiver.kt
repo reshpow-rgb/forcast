@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import com.riseup.alarm.data.AlarmRepository
+import com.riseup.alarm.data.StreakRepository
 
 /** Fired by AlarmManager at alarm time. */
 class AlarmReceiver : BroadcastReceiver() {
@@ -16,6 +17,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarm = repo.get(alarmId) ?: return
 
         if (!snooze) {
+            StreakRepository.get(context).recordRing()
             if (alarm.repeats) {
                 AlarmScheduler.schedule(context, alarm)
             } else {

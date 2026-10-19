@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.ads.AdSize
 import com.riseup.alarm.ads.BannerAd
+import com.riseup.alarm.data.StreakStats
+import com.riseup.alarm.data.Streaks
 import com.riseup.alarm.mission.Challenge
 import com.riseup.alarm.mission.ChallengeGenerator
 import com.riseup.alarm.mission.Content
@@ -51,6 +53,7 @@ import com.riseup.alarm.mission.Difficulty
 import com.riseup.alarm.mission.MathChallenge
 import com.riseup.alarm.mission.MissionType
 import com.riseup.alarm.ui.theme.Muted
+import com.riseup.alarm.ui.theme.Sun
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 
@@ -69,11 +72,13 @@ fun RingScreen(
     canShowAd: () -> Boolean,
     onMissionStarted: () -> Unit,
     onMissionAbandoned: () -> Unit,
-    onMissionComplete: () -> Unit,
+    /** Records the wake-up and returns the updated streak. */
+    onMissionComplete: () -> StreakStats,
     onSnooze: () -> Unit,
     onFinish: () -> Unit,
 ) {
     var phase by remember { mutableStateOf(if (preview) Phase.MISSION else Phase.RINGING) }
+    var streak by remember { mutableStateOf(StreakStats.EMPTY) }
 
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         Box(Modifier.safeDrawingPadding().imePadding().padding(24.dp)) {
@@ -91,9 +96,9 @@ fun RingScreen(
                         rounds = rounds,
                         idleTimeout = !preview,
                         onIdle = { onMissionAbandoned(); phase = Phase.RINGING },
-                        onComplete = { onMissionComplete(); phase = Phase.DONE },
+                        onComplete = { streak = onMissionComplete(); phase = Phase.DONE },
                     )
-                    Phase.DONE -> Done(preview = preview, showAd = remember { canShowAd() }, onFinish = onFinish)
+                    Phase.DONE -> Done(preview = preview, streak = streak, showAd = remember { canShowAd() }, onFinish = onFinish)
                 }
             }
         }
@@ -236,7 +241,7 @@ private fun Mission(
 }
 
 @Composable
-private fun Done(preview: Boolean, showAd: Boolean, onFinish: () -> Unit) {
+private fun Done(preview: Boolean, streak: StreakStats, showAd: Boolean, onFinish: () -> Unit) {
     val quote = remember { Content.quotes.random() }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -251,6 +256,15 @@ private fun Done(preview: Boolean, showAd: Boolean, onFinish: () -> Unit) {
             Text("Good morning", color = Muted, style = MaterialTheme.typography.titleMedium)
             Clock()
             Text(quote, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(32.dp))
+            Text("${streak.current}", style = MaterialTheme.typography.displayMedium, color = Sun)
+            Text(
+                when {
+                    Streaks.isMilestone(streak.current) -> "${streak.current}-day milestone reached!"
+                    else -> "day streak"
+                },
+                color = if (Streaks.isMilestone(streak.current)) Sun else Muted,
+            )
         }
         Spacer(Modifier.weight(1f))
         if (showAd) {

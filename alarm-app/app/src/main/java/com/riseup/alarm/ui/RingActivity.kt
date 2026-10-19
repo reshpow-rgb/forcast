@@ -13,6 +13,7 @@ import com.riseup.alarm.ads.Ads
 import com.riseup.alarm.alarm.AlarmScheduler
 import com.riseup.alarm.alarm.AlarmService
 import com.riseup.alarm.data.AlarmRepository
+import com.riseup.alarm.data.StreakRepository
 import com.riseup.alarm.mission.Difficulty
 import com.riseup.alarm.mission.MissionType
 import com.riseup.alarm.ui.theme.RiseUpTheme
@@ -45,6 +46,7 @@ class RingActivity : ComponentActivity() {
         }
 
         val isPremium = (application as RiseUpApp).billing.isPremium.value
+        val streaks = StreakRepository.get(this)
         setContent {
             RiseUpTheme {
                 RingScreen(
@@ -57,7 +59,13 @@ class RingActivity : ComponentActivity() {
                     canShowAd = { !isPremium && !preview && !isLocked() },
                     onMissionStarted = { if (!preview) AlarmService.send(this, AlarmService.ACTION_QUIET) },
                     onMissionAbandoned = { if (!preview) AlarmService.send(this, AlarmService.ACTION_LOUD) },
-                    onMissionComplete = { if (!preview) AlarmService.send(this, AlarmService.ACTION_STOP) },
+                    onMissionComplete = {
+                        if (!preview) {
+                            AlarmService.send(this, AlarmService.ACTION_STOP)
+                            streaks.recordWake()
+                        }
+                        streaks.stats.value
+                    },
                     onSnooze = {
                         AlarmService.send(this, AlarmService.ACTION_STOP)
                         AlarmScheduler.scheduleSnooze(this, alarmId)
