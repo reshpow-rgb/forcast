@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- half sun -->
+    <path
+        android:fillColor="@color/sun"
+        android:pathData="M36,62 A18,18 0 0,1 72,62 Z" />
+    <!-- horizon -->
+    <path
+        android:fillColor="@color/sun"
+        android:pathData="M30,66 L78,66 L78,69 L30,69 Z" />
+    <!-- rays -->
+    <path
+        android:fillColor="@color/sun"
+        android:pathData="M52.5,30 L55.5,30 L55.5,38 L52.5,38 Z M31.2,41.3 L33.3,39.2 L38.9,44.8 L36.8,46.9 Z M74.8,39.2 L76.9,41.3 L71.2,46.9 L69.1,44.8 Z" />
+</vector>

@@ -1,0 +1,30 @@
+name: RiseUp alarm app (Android)
+
+on:
+  push:
+    paths: ["alarm-app/**", ".github/workflows/alarm-app.yml"]
+  pull_request:
+    paths: ["alarm-app/**", ".github/workflows/alarm-app.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: alarm-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests and debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: riseup-debug-apk
+          path: alarm-app/app/build/outputs/apk/debug/*.apk

@@ -1,0 +1,93 @@
+# RiseUp — mission alarm clock for Android
+
+A minimalist alarm clock in the spirit of Alarmy: the alarm keeps ringing until you complete a
+**wake-up mission**.
+
+- **Maths** – solve a sum (Easy `23 + 41`, Normal `7 × 18 + 42`, Hard `24 × 17 + 312 − 58`)
+- **Quote** – re-type a short motivational quote
+- **Words** – re-type a list of random words (3 / 5 / 7 words)
+
+Each alarm has a time, repeat days, mission, difficulty, number of rounds (1–5) and an optional label.
+
+## How it behaves
+
+- Rings at the exact time, even in Doze and on the lock screen (full-screen alarm screen).
+- Back button does nothing while ringing; opening the app from the launcher sends you back to the mission.
+- When you start the mission the alarm goes quiet. Stop typing for 30 seconds and it gets loud again
+  and the mission starts over.
+- Snooze is 5 minutes.
+- Alarms are re-armed after a reboot or time-zone change.
+- "Try this mission" in the alarm editor lets you practise a mission.
+
+## Making money from it
+
+Freemium, with two income streams:
+
+| | Free | Premium (one-time purchase) |
+|---|---|---|
+| Ads | Banner on the alarm list, plus a medium rectangle on the "Good morning" screen after the mission | None |
+| Alarms | 3 | Unlimited |
+| Difficulty | Easy, Normal | + Hard |
+| Rounds | 1–3 | 1–5 |
+
+The "Good morning" ad only shows when the phone is unlocked (AdMob doesn't allow ads on the lock
+screen) and never during the ringing/mission screens.
+
+### Setup checklist
+
+1. **AdMob** – create an app and a *Banner* ad unit at <https://admob.google.com>. Add the IDs to
+   `alarm-app/gradle.properties` (or `~/.gradle/gradle.properties` to keep them out of git):
+   ```
+   ADMOB_APP_ID=ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy
+   ADMOB_BANNER_ID=ca-app-pub-xxxxxxxxxxxxxxxx/zzzzzzzzzz
+   ```
+   Until you do, Google's **test** ads are shown. Never click your own live ads.
+2. **Consent (GDPR)** – in AdMob go to *Privacy & messaging* and publish a GDPR message. The app
+   already uses Google's User Messaging Platform to show it, and adds a "Privacy settings" link
+   when required.
+3. **Premium purchase** – in Play Console, create a one-time in-app product with ID
+   `premium_unlock` and set your price (e.g. $2.99–$4.99). It appears in the app once the build is
+   uploaded to a testing track. For serious volume, verify purchase tokens on a server.
+4. **Play Console declarations** – the app uses `USE_EXACT_ALARM`, `USE_FULL_SCREEN_INTENT` and a
+   `mediaPlayback` foreground service. These are allowed for alarm-clock apps; declare it as an
+   alarm clock when asked. You also need a privacy policy URL (required because of ads) and to
+   fill in the Data safety form (AdMob collects device identifiers).
+5. **Change the package name** – `com.riseup.alarm` in `app/build.gradle.kts` (`applicationId`)
+   if you want your own; it can't change after the first upload.
+
+## Build and run
+
+Requirements: Android Studio (Ladybug or newer) or JDK 17 + Android SDK 35.
+
+- **Android Studio**: *Open* the `alarm-app` folder, wait for Gradle sync, press ▶ with a phone
+  connected (USB debugging on) or an emulator.
+- **Command line**: `cd alarm-app && ./gradlew assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`
+- **Without installing anything**: every push builds the app on GitHub Actions. Open the repo's
+  *Actions* tab → *RiseUp alarm app* → latest run → download `riseup-debug-apk`, copy the APK to
+  your phone and open it (allow "install unknown apps").
+
+### Release build for Google Play
+
+1. Create an upload key: `keytool -genkey -v -keystore upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`
+2. Create `alarm-app/keystore.properties` (git-ignored):
+   ```
+   storeFile=/absolute/path/upload.jks
+   storePassword=...
+   keyAlias=upload
+   keyPassword=...
+   ```
+3. `./gradlew bundleRelease` → upload `app/build/outputs/bundle/release/app-release.aab` to Play Console.
+
+## Code map
+
+```
+app/src/main/java/com/riseup/alarm/
+  mission/      Challenge generators (maths, quotes, words) and the word/quote lists
+  data/         Alarm model + next-ring-time logic, JSON storage
+  alarm/        AlarmManager scheduling, ringing foreground service, boot receiver
+  billing/      Google Play Billing (Premium unlock)
+  ads/          AdMob banners + consent
+  ui/           Alarm list, editor, ringing/mission screen (Jetpack Compose)
+```
+
+Unit tests (`./gradlew testDebugUnitTest`) cover the mission generators and the next-alarm-time logic.
