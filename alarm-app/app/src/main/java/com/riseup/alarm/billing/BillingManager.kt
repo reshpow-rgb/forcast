@@ -39,6 +39,7 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
     private val client = BillingClient.newBuilder(context.applicationContext)
         .setListener(this)
         .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
+        .enableAutoServiceReconnection()
         .build()
 
     fun start() {
@@ -104,9 +105,9 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
                 ),
             )
             .build()
-        client.queryProductDetailsAsync(params) { result, list ->
+        client.queryProductDetailsAsync(params) { result, queryResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                productDetails = list.firstOrNull()
+                productDetails = queryResult.productDetailsList.firstOrNull()
                 _price.value = productDetails?.oneTimePurchaseOfferDetails?.formattedPrice
             }
         }
