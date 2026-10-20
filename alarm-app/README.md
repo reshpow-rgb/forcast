@@ -45,6 +45,8 @@ finished resets it.
 
 ## Making money from it
 
+**Full step-by-step Play Store and monetisation guide: [RELEASE.md](RELEASE.md).**
+
 Freemium, with two income streams:
 
 | | Free | Premium (one-time purchase) |
