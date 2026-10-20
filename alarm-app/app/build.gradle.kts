@@ -36,6 +36,14 @@ android {
     }
 
     signingConfigs {
+        // A fixed, committed debug key so every CI build can install over the previous one.
+        // (Debug keys aren't secret; the Play Store upload key below is kept out of git.)
+        getByName("debug") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (keystoreProps.isNotEmpty()) {
             create("release") {
                 storeFile = file(keystoreProps.getProperty("storeFile"))

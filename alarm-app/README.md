@@ -88,7 +88,8 @@ Requirements: Android Studio (Ladybug or newer) or JDK 17 + Android SDK 35.
 - **Command line**: `cd alarm-app && ./gradlew assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`
 - **Without installing anything**: every push builds the app on GitHub Actions. Open the repo's
   *Actions* tab → *RiseUp alarm app* → latest run → download `riseup-debug-apk`, copy the APK to
-  your phone and open it (allow "install unknown apps").
+  your phone and open it (allow "install unknown apps"). Builds are signed with the committed
+  `debug.keystore`, so each new build installs over the previous one and keeps your alarms.
 
 ### Release build for Google Play
 
