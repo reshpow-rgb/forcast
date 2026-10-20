@@ -27,7 +27,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
@@ -64,7 +66,7 @@ import com.riseup.alarm.data.StreakRepository
 import com.riseup.alarm.data.StreakStats
 import com.riseup.alarm.ui.theme.ClockStyle
 import com.riseup.alarm.ui.theme.Muted
-import com.riseup.alarm.ui.theme.Sun
+import com.riseup.alarm.ui.theme.AccentColor
 import kotlinx.coroutines.delay
 
 @Composable
@@ -81,6 +83,7 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
     var editing by remember { mutableStateOf<Alarm?>(null) }
     var showPremium by remember { mutableStateOf(false) }
     var showStreaks by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
 
     val save: (Alarm) -> Unit = { alarm ->
         repo.upsert(alarm)
@@ -89,7 +92,10 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
     }
 
     val current = editing
-    if (showStreaks) {
+    if (showSettings) {
+        BackHandler { showSettings = false }
+        SettingsScreen(onClose = { showSettings = false })
+    } else if (showStreaks) {
         BackHandler { showStreaks = false }
         StreaksScreen(onClose = { showStreaks = false })
     } else if (current != null) {
@@ -139,7 +145,7 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
             ),
             modifier = Modifier.fillMaxSize(),
         ) {
-            item { Header(alarms, isPremium, onPremium = { showPremium = true }) }
+            item { Header(alarms, isPremium, onPremium = { showPremium = true }, onSettings = { showSettings = true }) }
             item { StreakRow(streak, onClick = { showStreaks = true }) }
             item { PermissionWarnings(refreshTick) }
             if (alarms.isEmpty()) {
@@ -184,7 +190,7 @@ fun HomeScreen(billing: BillingManager, refreshTick: Int) {
 }
 
 @Composable
-private fun Header(alarms: List<Alarm>, isPremium: Boolean, onPremium: () -> Unit) {
+private fun Header(alarms: List<Alarm>, isPremium: Boolean, onPremium: () -> Unit, onSettings: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -202,6 +208,7 @@ private fun Header(alarms: List<Alarm>, isPremium: Boolean, onPremium: () -> Uni
                 Text("Premium")
             }
         }
+        IconButton(onClick = onSettings) { Icon(Icons.Default.Settings, contentDescription = "Appearance") }
     }
     Spacer(Modifier.height(32.dp))
     Text(
@@ -227,7 +234,7 @@ private fun StreakRow(stats: StreakStats, onClick: () -> Unit) {
             Text(
                 "${stats.current}",
                 style = MaterialTheme.typography.headlineMedium,
-                color = if (stats.current > 0) Sun else Muted,
+                color = if (stats.current > 0) AccentColor else Muted,
                 modifier = Modifier.width(48.dp),
             )
             Column(Modifier.weight(1f)) {

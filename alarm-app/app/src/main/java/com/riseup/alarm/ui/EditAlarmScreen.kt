@@ -6,6 +6,7 @@ import android.content.Intent
 import android.text.format.DateFormat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -51,6 +59,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.riseup.alarm.data.Alarm
+import com.riseup.alarm.data.Animal
+import com.riseup.alarm.ui.animals.SleepyAnimal
 import com.riseup.alarm.mission.Difficulty
 import com.riseup.alarm.mission.MissionType
 import com.riseup.alarm.ui.theme.Muted
@@ -75,6 +85,10 @@ fun EditAlarmScreen(
     var difficulty by remember { mutableStateOf(initial.difficulty) }
     var rounds by remember { mutableIntStateOf(initial.rounds) }
     var label by remember { mutableStateOf(initial.label) }
+    var sound by remember { mutableStateOf(initial.sound) }
+    var soundTitle by remember { mutableStateOf(initial.soundTitle) }
+    var animal by remember { mutableStateOf(initial.animal) }
+    var pickingSound by remember { mutableStateOf(false) }
 
     fun current() = initial.copy(
         hour = timeState.hour,
@@ -84,8 +98,22 @@ fun EditAlarmScreen(
         difficulty = difficulty,
         rounds = rounds,
         label = label.trim(),
+        sound = sound,
+        soundTitle = soundTitle,
+        animal = animal,
         enabled = true,
     )
+
+    if (pickingSound) {
+        BackHandler { pickingSound = false }
+        SoundPickerScreen(
+            selected = sound,
+            selectedTitle = soundTitle,
+            onSelect = { s, t -> sound = s; soundTitle = t },
+            onClose = { pickingSound = false },
+        )
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -175,6 +203,32 @@ fun EditAlarmScreen(
                 }
             }
 
+            SectionTitle("Sound")
+            Surface(
+                onClick = { pickingSound = true },
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                    Text(soundTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Muted)
+                }
+            }
+
+            SectionTitle("Wake-up buddy")
+            Text(
+                "Sleeps while your alarm rings and wakes up as you complete your mission.",
+                color = Muted,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 10.dp),
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(Animal.entries) { a ->
+                    BuddyCard(a, selected = a == animal) { animal = a }
+                }
+            }
+
             SectionTitle("Label")
             OutlinedTextField(
                 value = label,
@@ -192,12 +246,40 @@ fun EditAlarmScreen(
                             .putExtra(RingActivity.EXTRA_PREVIEW, true)
                             .putExtra(RingActivity.EXTRA_MISSION, mission.name)
                             .putExtra(RingActivity.EXTRA_DIFFICULTY, difficulty.name)
-                            .putExtra(RingActivity.EXTRA_ROUNDS, rounds),
+                            .putExtra(RingActivity.EXTRA_ROUNDS, rounds)
+                            .putExtra(RingActivity.EXTRA_ANIMAL, animal.name),
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Try this mission") }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun BuddyCard(animal: Animal, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = if (selected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+        modifier = Modifier.width(92.dp),
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 10.dp)) {
+            if (animal == Animal.NONE) {
+                Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) { Text("\u2014", color = Muted) }
+            } else {
+                // The chosen one is awake and happy; the others are napping.
+                SleepyAnimal(animal, wake = if (selected) 1f else 0f, modifier = Modifier.size(64.dp), zColor = Muted, wakeMillis = 1200)
+            }
+            Text(
+                animal.title,
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
         }
     }
 }

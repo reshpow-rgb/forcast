@@ -53,6 +53,9 @@ class AlarmRepository private constructor(context: Context) {
         .put("mission", mission.name)
         .put("difficulty", difficulty.name)
         .put("rounds", rounds)
+        .put("sound", sound)
+        .put("soundTitle", soundTitle)
+        .put("animal", animal.name)
 
     private fun JSONObject.toAlarm(): Alarm {
         val daysJson = getJSONArray("days")
@@ -63,9 +66,12 @@ class AlarmRepository private constructor(context: Context) {
             days = (0 until daysJson.length()).map { daysJson.getInt(it) }.toSet(),
             enabled = getBoolean("enabled"),
             label = optString("label"),
-            mission = runCatching { MissionType.valueOf(getString("mission")) }.getOrDefault(MissionType.MATH),
-            difficulty = runCatching { Difficulty.valueOf(getString("difficulty")) }.getOrDefault(Difficulty.NORMAL),
+            mission = enumOrDefault(optString("mission"), MissionType.MATH),
+            difficulty = enumOrDefault(optString("difficulty"), Difficulty.NORMAL),
             rounds = optInt("rounds", 1),
+            sound = optString("sound", "default"),
+            soundTitle = optString("soundTitle", "Phone's alarm sound"),
+            animal = enumOrDefault(optString("animal"), Animal.CORGI),
         )
     }
 

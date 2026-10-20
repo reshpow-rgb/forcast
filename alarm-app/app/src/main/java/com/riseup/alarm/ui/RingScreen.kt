@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.ads.AdSize
 import com.riseup.alarm.ads.BannerAd
+import com.riseup.alarm.data.Animal
 import com.riseup.alarm.data.StreakStats
 import com.riseup.alarm.data.Streaks
 import com.riseup.alarm.mission.Challenge
@@ -52,8 +54,9 @@ import com.riseup.alarm.mission.Content
 import com.riseup.alarm.mission.Difficulty
 import com.riseup.alarm.mission.MathChallenge
 import com.riseup.alarm.mission.MissionType
+import com.riseup.alarm.ui.animals.SleepyAnimal
 import com.riseup.alarm.ui.theme.Muted
-import com.riseup.alarm.ui.theme.Sun
+import com.riseup.alarm.ui.theme.AccentColor
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 
@@ -69,6 +72,7 @@ fun RingScreen(
     mission: MissionType,
     difficulty: Difficulty,
     rounds: Int,
+    animal: Animal,
     canShowAd: () -> Boolean,
     onMissionStarted: () -> Unit,
     onMissionAbandoned: () -> Unit,
@@ -86,6 +90,7 @@ fun RingScreen(
                 when (p) {
                     Phase.RINGING -> Ringing(
                         label = label,
+                        animal = animal,
                         mission = mission,
                         onStart = { onMissionStarted(); phase = Phase.MISSION },
                         onSnooze = onSnooze,
@@ -94,11 +99,12 @@ fun RingScreen(
                         mission = mission,
                         difficulty = difficulty,
                         rounds = rounds,
+                        animal = animal,
                         idleTimeout = !preview,
                         onIdle = { onMissionAbandoned(); phase = Phase.RINGING },
                         onComplete = { streak = onMissionComplete(); phase = Phase.DONE },
                     )
-                    Phase.DONE -> Done(preview = preview, streak = streak, showAd = remember { canShowAd() }, onFinish = onFinish)
+                    Phase.DONE -> Done(preview = preview, animal = animal, streak = streak, showAd = remember { canShowAd() }, onFinish = onFinish)
                 }
             }
         }
@@ -122,13 +128,26 @@ private fun Clock() {
     }
 }
 
+/** The buddy animal, easing from [from] to [to] wakefulness over [millis]. */
 @Composable
-private fun Ringing(label: String, mission: MissionType, onStart: () -> Unit, onSnooze: () -> Unit) {
+private fun Buddy(animal: Animal, from: Float, to: Float, millis: Int, modifier: Modifier) {
+    var wake by remember { mutableFloatStateOf(from) }
+    LaunchedEffect(to) { wake = to }
+    SleepyAnimal(animal, wake, modifier, zColor = Muted, wakeMillis = millis)
+}
+
+@Composable
+private fun Ringing(label: String, animal: Animal, mission: MissionType, onStart: () -> Unit, onSnooze: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.weight(0.6f))
         Clock()
         Text(label.ifBlank { "Time to rise" }, color = Muted, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.weight(1.4f))
+        if (animal != Animal.NONE) {
+            // Still asleep - it starts to stir while the alarm rings, and wakes up properly as you do the mission.
+            Buddy(animal, from = 0f, to = 0.45f, millis = 25_000, modifier = Modifier.weight(2f).fillMaxWidth().padding(vertical = 16.dp))
+        } else {
+            Spacer(Modifier.weight(1.4f))
+        }
         Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(64.dp)) {
             Text("Start mission · ${mission.title}", fontSize = 18.sp)
         }
@@ -143,6 +162,7 @@ private fun Mission(
     mission: MissionType,
     difficulty: Difficulty,
     rounds: Int,
+    animal: Animal,
     idleTimeout: Boolean,
     onIdle: () -> Unit,
     onComplete: () -> Unit,
@@ -196,12 +216,24 @@ private fun Mission(
         if (idleTimeout) {
             LinearProgressIndicator(progress = { idleProgress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
         }
-        Text(
-            "Round $round of $rounds",
-            color = Muted,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(top = 16.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp)) {
+            if (animal != Animal.NONE) {
+                // Each round you finish wakes your buddy up a bit more.
+                Buddy(
+                    animal,
+                    from = 0.45f,
+                    to = 0.45f + 0.45f * (round - 1) / rounds,
+                    millis = 2_500,
+                    modifier = Modifier.size(72.dp),
+                )
+            }
+            Text(
+                "Round $round of $rounds",
+                color = Muted,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
         Spacer(Modifier.weight(1f))
         Text(challenge.instruction, color = Muted, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(12.dp))
@@ -241,7 +273,7 @@ private fun Mission(
 }
 
 @Composable
-private fun Done(preview: Boolean, streak: StreakStats, showAd: Boolean, onFinish: () -> Unit) {
+private fun Done(preview: Boolean, animal: Animal, streak: StreakStats, showAd: Boolean, onFinish: () -> Unit) {
     val quote = remember { Content.quotes.random() }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -249,21 +281,25 @@ private fun Done(preview: Boolean, streak: StreakStats, showAd: Boolean, onFinis
         modifier = Modifier.fillMaxSize(),
     ) {
         Spacer(Modifier.weight(1f))
+        if (animal != Animal.NONE) {
+            Buddy(animal, from = 0.85f, to = 1f, millis = 1_500, modifier = Modifier.size(if (showAd) 120.dp else 180.dp))
+            Spacer(Modifier.height(8.dp))
+        }
         if (preview) {
             Text("Mission complete", style = MaterialTheme.typography.headlineSmall)
             Text("That's what you'll do when the alarm rings.", color = Muted, textAlign = TextAlign.Center)
         } else {
-            Text("Good morning", color = Muted, style = MaterialTheme.typography.titleMedium)
-            Clock()
+            Text("Good morning", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(8.dp))
             Text(quote, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(32.dp))
-            Text("${streak.current}", style = MaterialTheme.typography.displayMedium, color = Sun)
+            Spacer(Modifier.height(24.dp))
+            Text("${streak.current}", style = MaterialTheme.typography.displayMedium, color = AccentColor)
             Text(
                 when {
                     Streaks.isMilestone(streak.current) -> "${streak.current}-day milestone reached!"
                     else -> "day streak"
                 },
-                color = if (Streaks.isMilestone(streak.current)) Sun else Muted,
+                color = if (Streaks.isMilestone(streak.current)) AccentColor else Muted,
             )
         }
         Spacer(Modifier.weight(1f))

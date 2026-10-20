@@ -35,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,7 +44,7 @@ import com.riseup.alarm.data.StreakRepository
 import com.riseup.alarm.data.StreakStats
 import com.riseup.alarm.data.Streaks
 import com.riseup.alarm.ui.theme.Muted
-import com.riseup.alarm.ui.theme.Sun
+import com.riseup.alarm.ui.theme.AccentColor
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -79,7 +78,7 @@ fun StreaksScreen(onClose: () -> Unit) {
                 .padding(horizontal = 24.dp),
         ) {
             Spacer(Modifier.height(24.dp))
-            Text("${stats.current}", style = MaterialTheme.typography.displayLarge, color = Sun)
+            Text("${stats.current}", style = MaterialTheme.typography.displayLarge, color = AccentColor)
             Text("day streak", color = Muted)
             Spacer(Modifier.height(8.dp))
             Text(milestoneLine(stats), color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
@@ -164,11 +163,11 @@ private fun History(rang: Set<LocalDate>, woke: Set<LocalDate>) {
 @Composable
 private fun DayDot(status: DayStatus, isToday: Boolean, size: Int = 28) {
     val base = Modifier.size(size.dp)
-    val ring = if (isToday) BorderStroke(1.5.dp, Color.White) else null
+    val ring = if (isToday) BorderStroke(1.5.dp, MaterialTheme.colorScheme.onBackground) else null
     val m = when (status) {
-        DayStatus.WOKE -> base.background(Sun, CircleShape)
+        DayStatus.WOKE -> base.background(AccentColor, CircleShape)
         DayStatus.MISSED -> base.border(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.7f), CircleShape)
-        DayStatus.PENDING -> base.border(1.5.dp, Sun, CircleShape)
+        DayStatus.PENDING -> base.border(1.5.dp, AccentColor, CircleShape)
         DayStatus.NO_ALARM -> base.padding((size / 2 - 2).dp).background(MaterialTheme.colorScheme.outline, CircleShape)
     }
     Box(if (ring != null && status != DayStatus.NO_ALARM) m.border(ring, CircleShape) else m)

@@ -19,6 +19,10 @@ data class Alarm(
     val mission: MissionType = MissionType.MATH,
     val difficulty: Difficulty = Difficulty.NORMAL,
     val rounds: Int = 1,
+    /** See com.riseup.alarm.alarm.Sounds for the format. */
+    val sound: String = "default",
+    val soundTitle: String = "Phone's alarm sound",
+    val animal: Animal = Animal.CORGI,
 ) {
     val repeats get() = days.isNotEmpty()
 

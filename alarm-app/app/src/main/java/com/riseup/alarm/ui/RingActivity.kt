@@ -13,6 +13,8 @@ import com.riseup.alarm.ads.Ads
 import com.riseup.alarm.alarm.AlarmScheduler
 import com.riseup.alarm.alarm.AlarmService
 import com.riseup.alarm.data.AlarmRepository
+import com.riseup.alarm.data.Animal
+import com.riseup.alarm.data.enumOrDefault
 import com.riseup.alarm.data.StreakRepository
 import com.riseup.alarm.mission.Difficulty
 import com.riseup.alarm.mission.MissionType
@@ -35,6 +37,7 @@ class RingActivity : ComponentActivity() {
 
         val mission = intent.getStringExtra(EXTRA_MISSION)?.let(MissionType::valueOf) ?: alarm?.mission ?: MissionType.MATH
         val difficulty = intent.getStringExtra(EXTRA_DIFFICULTY)?.let(Difficulty::valueOf) ?: alarm?.difficulty ?: Difficulty.NORMAL
+        val animal = if (preview) enumOrDefault(intent.getStringExtra(EXTRA_ANIMAL), Animal.CORGI) else alarm?.animal ?: Animal.CORGI
         val rounds = if (preview) intent.getIntExtra(EXTRA_ROUNDS, 1) else alarm?.rounds ?: 1
 
         if (!preview) {
@@ -55,6 +58,7 @@ class RingActivity : ComponentActivity() {
                     mission = mission,
                     difficulty = difficulty,
                     rounds = rounds,
+                    animal = animal,
                     // AdMob policy: no ads on the lock screen, and never for Premium users.
                     canShowAd = { !isPremium && !preview && !isLocked() },
                     onMissionStarted = { if (!preview) AlarmService.send(this, AlarmService.ACTION_QUIET) },
@@ -97,5 +101,6 @@ class RingActivity : ComponentActivity() {
         const val EXTRA_MISSION = "mission"
         const val EXTRA_DIFFICULTY = "difficulty"
         const val EXTRA_ROUNDS = "rounds"
+        const val EXTRA_ANIMAL = "animal"
     }
 }

@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -64,7 +63,7 @@ class AlarmService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
         ringingAlarmId = alarmId
-        startRinging()
+        startRinging(alarmId)
         return START_REDELIVER_INTENT
     }
 
@@ -96,7 +95,7 @@ class AlarmService : Service() {
             .build()
     }
 
-    private fun startRinging() {
+    private fun startRinging(alarmId: Int) {
         if (player != null) return
 
         wakeLock = getSystemService(PowerManager::class.java)
@@ -107,12 +106,10 @@ class AlarmService : Service() {
             .setUsage(AudioAttributes.USAGE_ALARM)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
-        val candidates = listOfNotNull(
-            RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM),
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-        )
+        val sound = AlarmRepository.get(this).get(alarmId)?.sound ?: Sounds.DEFAULT
+        // A picked file can disappear (deleted, SD card removed) - fall back to the phone's alarm sound.
+        val candidates = if (sound == Sounds.SILENT) emptyList()
+        else listOfNotNull(Sounds.uriFor(this, sound)) + Sounds.fallbacks(this)
         for (uri in candidates) {
             player = runCatching {
                 MediaPlayer().apply {
